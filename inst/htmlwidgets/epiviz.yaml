@@ -1,0 +1,15 @@
+dependencies:
+  - name: d3
+    version: 3.5.6
+    src: "htmlwidgets/lib/d3-3.5.6"
+    script: d3.v3.min.js
+  - name: topojson
+    version: 1.6.19
+    src: "htmlwidgets/lib/topojson-1.6.19"
+    script: topojson.v1.min.js
+  - name: style
+    version: 0
+    src: "htmlwidgets/"
+    stylesheet: epiviz.css
+
+

@@ -1,0 +1,8 @@
+Package: epiviz
+Title: What the Package Does (one line, title case)
+Version: 0.0.0.9000
+Authors@R: person("Arie", "Voorman", email = "arie.vooorman@gmail.com", role = c("aut", "cre"))
+Description: An R package to produce animated Javascript/D3 maps of events (such as in an epidemic) and incidence curves.
+Depends: R (>= 3.0.0)
+License: GPL-2
+LazyData: true
