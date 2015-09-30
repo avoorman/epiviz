@@ -21,18 +21,26 @@ renderValue: function(el, x, instance) {
   var height = bbox.height;
   var width = bbox.width;
 
-  console.log(x);
+  //console.log(x);
 
   // Create containers
   var barheight = height*x.settings.curveHeight;
   var mapheight = height*(1-x.settings.curveHeight);
-	var svg = d3.select(el).append("div").append("svg")
+  var svg = d3.select(el).append("div").append("svg")
     	.attr("width", width)
     	.attr("height", height)
     	.attr("overflow","hidden");
-  var data = HTMLWidgets.dataframeToD3(x.data);
-  for (i = 0; i < data.length; i++) {
-    data[i].onset = new Date(data[i].onset);
+
+  if(x.data){
+    var data = HTMLWidgets.dataframeToD3(x.data);
+    for (i = 0; i < data.length; i++) {
+      data[i].onset = new Date(data[i].onset);
+    }
+
+  var legendMap = d3.map(data, function(d){ return d.color});
+  var legendData = legendMap.keys();
+  var selectedColors = legendMap.keys();
+
   }
 
   var mapspace = svg.append("g").attr("transform","translate(0," + barheight + ")");
@@ -44,46 +52,88 @@ renderValue: function(el, x, instance) {
     left: 50
   };
 
-	var shape = x.shape;
+  var shape = x.shape;
 
-  var	legendMap = d3.map(data, function(d){ return d.color});
-  var legendData = legendMap.keys();
-  var selectedColors = legendMap.keys();
 
-	var projection = d3.geo.mercator();
 
-	var path = d3.geo.path()
+  var projection = d3.geo.mercator();
+
+  var path = d3.geo.path()
     	.projection(projection);
 
   projection
       .scale(1)
       .translate([0, 0]);
-
-  var b = [projection([d3.min(data, function(d){return d.x}), d3.max(data, function(d){return d.y})]),
+  if(x.data){
+      var b = [projection([d3.min(data, function(d){return d.x}), d3.max(data, function(d){return d.y})]),
            projection([d3.max(data, function(d){return d.x}), d3.min(data, function(d){return d.y})])];
 
       s =  (x.settings.scale) / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / mapheight),
       t = [(width - s * (b[1][0] + b[0][0])) / 2, (mapheight - s * (b[1][1] + b[0][1])) / 2];
+  } else {
+    s = x.settings.scale;
+  }
 
-projection
+	projection
       .scale(s)
       .center([x.settings.center[0],x.settings.center[1]])
       .translate([width/2, mapheight/2 ]);
 
-var provinces = mapspace.selectAll(".provinces")
-      .data(topojson.feature(shape, shape.objects.province).features);
+var style = document.createElement("style");
+style.appendChild(document.createTextNode(""));
+document.head.appendChild(style);
 
-   provinces.enter().append("path")
-      .attr("class", "province")
-      .attr("d", path)
-      .style("stroke-linejoin","round");
+if(x.mapFills){
+    for(var i=0; i < x.mapFills.length; i++){
+    style.sheet.insertRule(".map" + x.mapIds[i] +  "{ fill: "+ x.mapFills[i]+ "; }",0);
+  }
+}
 
-   provinces.attr("fill","white").attr("stroke","#aaa");
+ for(var obj in x.settings.mapOptions){
+          if(shape.objects[obj]){
+            mapspace.append("g")
+              .selectAll("path")
+              .data(topojson.feature(shape, shape.objects[obj]).features)
+              .enter().append("path")
+              .attr("class", function(d) { return obj + " map" + d.id; })
+              .attr("d", path);
+          }
+        style.sheet.insertRule(x.settings.mapOptions[obj],0);
+    }
 
-   mapspace.append("path")
-    .datum(topojson.mesh(shape, shape.objects.country))
-    .attr("d", path)
-    .attr("class", "country-boundary");
+if(x.mapFills){
+  if(x.fillScale == "discrete"){
+  var fscale = d3.scale.ordinal()
+      .domain(x.fillDomain)
+      .range(x.fillRange);
+  }
+  if(x.fillScale == "linear"){
+    var fscale = d3.scale.linear()
+      .domain(x.fillDomain)
+      .range(x.fillRange);
+  }
+
+  mapspace.append("g")
+    .attr("class", "fillLegend")
+    .attr("transform", "translate(20,20)");
+
+  var fillLegend = d3.legend.color()
+    .scale(fscale);
+
+  mapspace.select(".fillLegend")
+    .call(fillLegend);
+
+  var bbox = mapspace.select(".fillLegend").node().getBBox();
+
+  mapspace.select(".fillLegend")
+  .insert("rect",":first-child")
+  .attr("x",bbox.x-5)
+  .attr("y",bbox.y-5)
+  .attr("height",bbox.height+10)
+  .attr("width",bbox.width+10)
+  .attr("fill","white")
+  .attr("stroke","black");
+}
 
 	var tooltip = d3.select("body")
 		.append("div")
@@ -91,9 +141,7 @@ var provinces = mapspace.selectAll(".provinces")
 		.style("position", "absolute")
 		.style("z-index", "10")
 		.style("visibility", "hidden");
-
-
-
+if(x.data){
 	var updateCircles = function(colors){
 		var value = new Date(handle.attr("selectedDate"));
 		var circles = mapspace.selectAll(".cases").data(data.filter(function(d){return (colors.indexOf(d.color) > -1 & value > d.onset & value -d.onset < 	(1000*24*60*60)*x.settings.fade )  }));
@@ -318,12 +366,13 @@ var drawLegend = function(selectedColors,legendData){
 					d3.event.stopPropagation();
 			   }
 		       });
-  legend.append("text").attr("x", 15).attr("y",5).text(function(d){return legendMap.get(d).type});
+  	legend.append("text").attr("x", 15).attr("y",5).text(function(d){return legendMap.get(d).type});
 	}
 	};
 
 drawLegend(selectedColors,legendData);
 
+}
 }
 
 });

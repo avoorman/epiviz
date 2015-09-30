@@ -1,28 +1,23 @@
-#'  EpiViz
+#'  epiviz
 #'
 #' Geo-spatial animation of epidemics
 #'
-#' TO DO::
-#' #' Condense to single SVG
-#' lazy_eval for arguments
-#' Allow different binning, and removal of epicurve
-#' Add linkage feature
-#' Choropleth + animation
-#' Standardize mapping (district, province, country, etc.)
-#' Documentation....
 #'
 #' @import htmlwidgets
 #'
 #' @export
-epiviz <- function(data, shape, dateRange = NULL, ylabel = "Cases/month",scale = 1, width = NULL, height = NULL, curveHeight = 0.3, fade = 180, animationDuration = 60, center = NULL, tooltip = NULL, drawLegend = TRUE) {
+epiviz <- function(baseMap=NULL, data,dateRange = NULL, center = NULL, scale = 1, ylabel = "Cases/month", width = NULL, height = NULL, curveHeight = 0.3, fade = 180, animationDuration = 60, tooltip = NULL, drawLegend = TRUE) {
+  if(is.null(baseMap)){
+    baseMap <- jsMap()
+  }
 
-  if(is.null(data$tooltip)) data$tooltip = paste0("Date: " , data$onset)
-  if(is.null(data$color)) data$color = "red"
+  if(is.null(data$tooltip) & !is.null(data)) data$tooltip = paste0("Date: " , data$onset)
+  if(is.null(data$color) & !is.null(data) ) data$color = "red"
   if(is.null(data$type)) drawLegend = FALSE
-  if(is.null(center)){
+  if(is.null(center) & !is.null(data)){
     center =c(mean(range(data$x)),mean(range(data$y)))
   }
-  if(is.null(dateRange)){
+  if(is.null(dateRange) & !is.null(data)){
     dateRange = range(data$onset)
   }
   settings = list(
@@ -38,10 +33,11 @@ epiviz <- function(data, shape, dateRange = NULL, ylabel = "Cases/month",scale =
     minDate= dateRange[1],
     maxDate = dateRange[2],
   	data = data,
-    shape = shape,
     tooltip = tooltip,
   	settings = settings
   )
+
+  x <- mergeLists(baseMap$x,x)
 
   # create widget
   htmlwidgets::createWidget(

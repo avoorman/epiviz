@@ -7,6 +7,10 @@ dependencies:
     version: 1.6.19
     src: "htmlwidgets/lib/topojson-1.6.19"
     script: topojson.v1.min.js
+  - name: d3-legend
+    version: 0.1
+    src: "htmlwidgets/lib/d3-legend"
+    script: d3-legend.js
   - name: style
     version: 0
     src: "htmlwidgets/"
